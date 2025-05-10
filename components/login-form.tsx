@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/context/auth-context"
 
@@ -21,6 +21,7 @@ export default function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [attempts, setAttempts] = useState(0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,16 +33,35 @@ export default function LoginForm() {
       return
     }
 
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError("Por favor ingresa un correo electrónico válido")
+      return
+    }
+
     setIsLoading(true)
 
     try {
       // Llamar a la función de login del contexto
-      await login(email, password)
+      await login(email, password, rememberMe)
 
+      // Resetear contador de intentos en caso de éxito
+      setAttempts(0)
+      
       // Redirigir al home después del inicio de sesión exitoso
       router.push("/")
     } catch (err) {
-      setError("Error al iniciar sesión. Por favor intenta de nuevo.")
+      // Incrementar contador de intentos fallidos
+      const newAttempts = attempts + 1
+      setAttempts(newAttempts)
+      
+      // Mensaje de error personalizado según el número de intentos
+      if (newAttempts >= 3) {
+        setError("Demasiados intentos fallidos. ¿Olvidaste tu contraseña?")
+      } else {
+        setError("Correo o contraseña incorrectos. Por favor intenta de nuevo.")
+      }
     } finally {
       setIsLoading(false)
     }
